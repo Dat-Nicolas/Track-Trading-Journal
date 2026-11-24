@@ -1,0 +1,79 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .dark {
+    --background: 240 10% 3.9%;       /* #09090B */
+    --foreground: 240 5% 96%;         /* #F4F4F5 */
+    --card: 228 14% 7.5%;             /* #111216 */
+    --card-foreground: 240 5% 96%;
+    --popover: 223 14% 10.2%;         /* #16181D */
+    --popover-foreground: 240 5% 96%;
+    --primary: 239 84% 67%;           /* #6366F1 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 223 14% 10.2%;       /* #16181D */
+    --secondary-foreground: 240 5% 92%;
+    --muted: 223 12% 13%;
+    --muted-foreground: 240 5% 60%;   /* #94949E */
+    --accent: 225 14% 14%;
+    --accent-foreground: 240 5% 96%;
+    --destructive: 350 89% 60%;       /* #F43F5E */
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 16%;
+    --input: 223 14% 10.2%;
+    --ring: 239 84% 67%;
+    --profit: 160 84% 39%;            /* #10B981 */
+    --loss: 350 89% 60%;              /* #F43F5E */
+    --radius: 0.625rem;
+  }
+
+  * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #09090b;
+    color: #f4f4f5;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom subtle scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+@layer utilities {
+  .font-num {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  MT5
+  BINANCE
+  BYBIT
+}
+
+enum TradeDirection {
+  BUY
+  SELL
+}
+
+enum TradeSource {
+  MT5_WEBHOOK
+  MT5_IMPORT
+  MANUAL
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String
+  displayTimezone String           @default("Asia/Ho_Chi_Minh")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  accounts        TradingAccount[]
+  tags            Tag[]
+}
+
+model TradingAccount {
+  id              String    @id @default(cuid())
+  userId          String
+  name            String
+  broker          String?
+  platform        Platform  @default(MT5)
+  accountNumber   String
+  currency        String    @default("USD")
+  initialBalance  Decimal   @default(0) @db.Decimal(18, 2)
+  brokerTimezone  String    @default("Europe/Athens")
+  displayTimezone String    @default("Asia/Ho_Chi_Minh")
+  webhookSecret   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades          Trade[]
+  syncLogs        SyncLog[]
+  candles         Candle[]
+
+  @@unique([userId, platform, accountNumber])
+}
+
+model Trade {
+  id                String         @id @default(cuid())
+  accountId         String
+  externalId        String
+  symbol            String
+  direction         TradeDirection
+  volume            Decimal        @db.Decimal(18, 8)
+  openTime          DateTime
+  closeTime         DateTime
+  holdingSeconds    Int
+  openPrice         Decimal        @db.Decimal(18, 8)
+  closePrice        Decimal        @db.Decimal(18, 8)
+  stopLoss          Decimal?       @db.Decimal(18, 8)
+  takeProfit        Decimal?       @db.Decimal(18, 8)
+  initialStopLoss   Decimal?       @db.Decimal(18, 8)
+  initialRiskAmount Decimal?       @db.Decimal(18, 2)
+  rMultiple         Decimal?       @db.Decimal(10, 4)
+  isManualRisk      Boolean        @default(false)
+  grossPnl          Decimal        @db.Decimal(18, 2)
+  commission        Decimal        @default(0) @db.Decimal(18, 2)
+  swap              Decimal        @default(0) @db.Decimal(18, 2)
+  netPnl            Decimal        @db.Decimal(18, 2)
+  note              String?        @db.Text
+  source            TradeSource
+  rawPayload        Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tags              TradeTag[]
+
+  @@unique([accountId, externalId])
+  @@index([accountId, closeTime])
+  @@index([accountId, symbol])
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  color     String     @default("#6366f1")
+  createdAt DateTime   @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades    TradeTag[]
+
+  @@unique([userId, name])
+}
+
+model TradeTag {
+  tradeId   String
+  tagId     String
+
+  trade     Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tag       Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, tagId])
+  @@index([tagId])
+}
+
+model SyncLog {
+  id            String         @id @default(cuid())
+  accountId     String
+  source        TradeSource
+  status        SyncStatus
+  fileName      String?
+  insertedCount Int            @default(0)
+  updatedCount  Int            @default(0)
+  skippedCount  Int            @default(0)
+  errorMessage  String?        @db.Text
+  createdAt     DateTime       @default(now())
+
+  account       TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+}
+
+model Candle {
+  id        String         @id @default(cuid())
+  accountId String
+  symbol    String
+  timeframe String
+  timestamp DateTime
+  open      Decimal        @db.Decimal(18, 8)
+  high      Decimal        @db.Decimal(18, 8)
+  low       Decimal        @db.Decimal(18, 8)
+  close     Decimal        @db.Decimal(18, 8)
+  volume    Decimal?       @db.Decimal(18, 8)
+
+  account   TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, symbol, timeframe, timestamp])
+  @@index([accountId, symbol, timeframe, timestamp])
+}
