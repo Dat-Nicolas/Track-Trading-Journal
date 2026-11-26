@@ -1,5 +1,9 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { EnvHttpProxyAgent, fetch } from 'undici';
+
+// Tự đi qua proxy nếu máy có HTTP(S)_PROXY (mạng công ty), không có thì gọi thẳng. Tôn trọng NO_PROXY.
+const dispatcher = new EnvHttpProxyAgent();
 
 // ponytail: PAXG (1 token = 1 oz vàng) bám sát XAU spot, miễn phí 24/7, không cần API key.
 // Muốn giá XAUUSD của sàn thì thay nguồn ở file này.
@@ -22,7 +26,7 @@ let cache: { price: Decimal; at: number } | null = null;
 
 async function binance<T>(path: string): Promise<T> {
   try {
-    const res = await fetch(`${BINANCE}${path}`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${BINANCE}${path}`, { dispatcher, signal: AbortSignal.timeout(5000) });
     if (!res.ok) throw new Error(String(res.status));
     return (await res.json()) as T;
   } catch {
