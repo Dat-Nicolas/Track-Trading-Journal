@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Swords,
   Upload,
   Wallet,
 } from 'lucide-react';
@@ -30,7 +31,10 @@ const NAV_GROUPS = [
   },
   {
     title: 'Nhật ký',
-    items: [{ href: '/trades', label: 'Trade Journal', icon: BookOpen }],
+    items: [
+      { href: '/trades', label: 'Trade Journal', icon: BookOpen },
+      { href: '/solo', label: 'Solo Trading', icon: Swords },
+    ],
   },
   {
     title: 'Dữ liệu',

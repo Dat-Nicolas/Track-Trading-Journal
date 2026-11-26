@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { CommonModule } from './common/common.module';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SoloModule } from './solo/solo.module';
 import { TagsModule } from './tags/tags.module';
 import { TradesModule } from './trades/trades.module';
 
@@ -22,6 +23,7 @@ import { TradesModule } from './trades/trades.module';
     TradesModule,
     IngestionModule,
     AnalyticsModule,
+    SoloModule,
   ],
   controllers: [AppController],
 })

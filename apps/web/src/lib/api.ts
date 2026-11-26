@@ -176,7 +176,120 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface SoloPositionDto {
+  id: string;
+  side: TradeDirection;
+  lots: string;
+  entryPrice: string;
+  stopLoss: string | null;
+  takeProfit: string | null;
+  openTime: string;
+  exitPrice: string | null;
+  closeTime: string | null;
+  closeReason: string | null;
+  netPnl: string;
+}
+
+export interface SoloParticipantDto {
+  id: string;
+  displayName: string;
+  role: 'HOST' | 'GUEST';
+  netPnl: string;
+  roiPct: number;
+  equity: string;
+  floatingPnl: string;
+  freeMargin: string;
+  tradeCount: number;
+  winRate: number;
+  maxDrawdownPct: number;
+  curve: Array<{ unixTime: number; roiPct: number }>;
+  positions: SoloPositionDto[];
+}
+
+export interface SoloScoreboardDto {
+  code: string;
+  title: string | null;
+  status: 'WAITING' | 'ACTIVE' | 'COMPLETED';
+  durationMinutes: number;
+  startTime: string | null;
+  endTime: string | null;
+  serverTime: string;
+  price: string;
+  startingCapital: string;
+  stakeAmount: string;
+  stakeUnit: string;
+  winnerId: string | null;
+  leaderId: string | null;
+  youId: string | null;
+  participants: SoloParticipantDto[];
+}
+
+export interface SoloListItemDto {
+  code: string;
+  title: string | null;
+  status: SoloScoreboardDto['status'];
+  startTime: string | null;
+  endTime: string | null;
+  startingCapital: string;
+  stakeAmount: string;
+  stakeUnit: string;
+  winnerId: string | null;
+  participants: Array<{ id: string; displayName: string; role: 'HOST' | 'GUEST'; finalRoiPct: string | null }>;
+}
+
+// Token người chơi lưu trong trình duyệt theo mã phòng (không có đăng nhập).
+// ponytail: mất token (xoá dữ liệu trình duyệt) = mất quyền đặt lệnh phòng đó; thêm đăng nhập khi mở ra ngoài bạn bè.
+export const soloToken = {
+  get: (code: string) => {
+    try {
+      return localStorage.getItem(`solo:${code}`) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  },
+  set: (code: string, token: string) => {
+    try {
+      localStorage.setItem(`solo:${code}`, token);
+    } catch {
+      // bỏ qua: trình duyệt chặn storage
+    }
+  },
+};
+
+const soloPath = (code: string) => `/solo/${encodeURIComponent(code)}`;
+const soloHeaders = (code: string): HeadersInit => {
+  const t = soloToken.get(code);
+  return t ? { 'x-solo-token': t } : {};
+};
+
 export const api = {
+  // Solo 1v1 vàng
+  getSoloList: () => apiFetch<SoloListItemDto[]>('/solo'),
+  createSolo: (body: {
+    title?: string;
+    hostName: string;
+    durationMinutes: number;
+    startingCapital: string;
+    stakeAmount: string;
+    stakeUnit: string;
+  }) => apiFetch<{ code: string; token: string }>('/solo', { method: 'POST', body: JSON.stringify(body) }),
+  getSolo: (code: string) => apiFetch<SoloScoreboardDto>(soloPath(code), { headers: soloHeaders(code) }),
+  joinSolo: (code: string, body: { displayName: string }) =>
+    apiFetch<{ code: string; token: string }>(`${soloPath(code)}/join`, { method: 'POST', body: JSON.stringify(body) }),
+  soloOrder: (code: string, body: { side: TradeDirection; lots: string; stopLoss?: string; takeProfit?: string }) =>
+    apiFetch<SoloScoreboardDto>(`${soloPath(code)}/orders`, {
+      method: 'POST',
+      headers: soloHeaders(code),
+      body: JSON.stringify(body),
+    }),
+  soloClose: (code: string, positionId: string) =>
+    apiFetch<SoloScoreboardDto>(`${soloPath(code)}/positions/${encodeURIComponent(positionId)}/close`, {
+      method: 'POST',
+      headers: soloHeaders(code),
+    }),
+  cancelSolo: (code: string) =>
+    apiFetch<{ deleted: boolean }>(soloPath(code), { method: 'DELETE', headers: soloHeaders(code) }),
+
   // Accounts
   getAccounts: () => apiFetch<AccountDto[]>('/accounts'),
   createAccount: (body: {

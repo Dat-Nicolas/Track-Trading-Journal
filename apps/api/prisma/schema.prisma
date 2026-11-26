@@ -30,6 +30,17 @@ enum SyncStatus {
   FAILED
 }
 
+enum SoloStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+}
+
+enum SoloRole {
+  HOST
+  GUEST
+}
+
 model User {
   id              String           @id @default(cuid())
   email           String           @unique
@@ -158,4 +169,58 @@ model Candle {
 
   @@unique([accountId, symbol, timeframe, timestamp])
   @@index([accountId, symbol, timeframe, timestamp])
+}
+
+// Solo 1v1 giữa bạn bè: đánh vàng giả lập trên web, cùng vốn demo, ai ROI% cao hơn thắng. App chỉ ghi sổ cược.
+model SoloChallenge {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  title           String?
+  status          SoloStatus        @default(WAITING)
+  durationMinutes Int
+  startingCapital Decimal           @db.Decimal(18, 2)
+  stakeAmount     Decimal           @default(0) @db.Decimal(18, 2)
+  stakeUnit       String            @default("đồng")
+  startTime       DateTime?
+  endTime         DateTime?
+  winnerId        String?
+  settledAt       DateTime?
+  createdAt       DateTime          @default(now())
+
+  participants    SoloParticipant[]
+}
+
+model SoloParticipant {
+  id          String         @id @default(cuid())
+  challengeId String
+  displayName String
+  role        SoloRole
+  token       String
+  finalNetPnl Decimal?       @db.Decimal(18, 2)
+  finalRoiPct Decimal?       @db.Decimal(10, 4)
+  createdAt   DateTime       @default(now())
+
+  challenge   SoloChallenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  positions   SoloPosition[]
+
+  @@unique([challengeId, role])
+}
+
+model SoloPosition {
+  id            String          @id @default(cuid())
+  participantId String
+  side          TradeDirection
+  lots          Decimal         @db.Decimal(10, 2)
+  entryPrice    Decimal         @db.Decimal(18, 4)
+  stopLoss      Decimal?        @db.Decimal(18, 4)
+  takeProfit    Decimal?        @db.Decimal(18, 4)
+  openTime      DateTime        @default(now())
+  exitPrice     Decimal?        @db.Decimal(18, 4)
+  closeTime     DateTime?
+  closeReason   String?
+  netPnl        Decimal?        @db.Decimal(18, 2)
+
+  participant   SoloParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
 }
